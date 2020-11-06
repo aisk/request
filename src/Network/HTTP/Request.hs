@@ -1,5 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-
 module Network.HTTP.Request
   ( Request
   , Response
@@ -25,14 +23,14 @@ data Method
   deriving (Eq, Show)
 
 data Request = Request
-  { method  :: Method
-  , url     :: String
-  , headers :: Headers
-  , body    :: Maybe BS.ByteString
+  { requestMethod  :: Method
+  , requestUrl     :: String
+  , requestHeaders :: Headers
+  , requestBody    :: Maybe BS.ByteString
   } deriving (Show)
 
 data Response = Response
-  { status  :: Int
-  , headers :: Headers
-  , body    :: BS.ByteString
+  { responseStatus  :: Int
+  , responseHeaders :: Headers
+  , responseBody    :: BS.ByteString
   } deriving (Show)
