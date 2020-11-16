@@ -39,7 +39,7 @@ data Request = Request
   } deriving (Show)
 
 toLowlevelRequest :: Request -> IO LowLevelClient.Request
-toLowlevelRequest (req) = do
+toLowlevelRequest req = do
   initReq <- LowLevelClient.parseRequest $ requestUrl req
   return $ initReq { LowLevelClient.method = C.pack . show $ requestMethod req
                    , LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) $ requestHeaders req
@@ -52,7 +52,7 @@ data Response = Response
   } deriving (Show)
 
 fromLowLevelRequest :: LowLevelClient.Response LBS.ByteString -> Response
-fromLowLevelRequest (res) =
+fromLowLevelRequest res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
       body = LBS.toStrict $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
@@ -64,11 +64,11 @@ fromLowLevelRequest (res) =
 
 getManagerForUrl :: String -> IO LowLevelClient.Manager
 getManagerForUrl url =
-    if (List.isPrefixOf "https" url) then LowLevelClient.newManager LowLevelTLSClient.tlsManagerSettings
+    if "https" `List.isPrefixOf` url then LowLevelClient.newManager LowLevelTLSClient.tlsManagerSettings
                                      else LowLevelClient.newManager LowLevelClient.defaultManagerSettings
 
 send :: Request -> IO Response
-send (req) = do
+send req = do
   manager <- getManagerForUrl $ requestUrl req
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
