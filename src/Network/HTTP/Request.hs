@@ -73,3 +73,19 @@ send (req) = do
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
   return $ fromLowLevelRequest llres
+
+get :: String -> IO Response
+get url =
+  send $ Request GET url [] Nothing
+
+delete :: String -> IO Response
+delete url =
+  send $ Request DELETE url [] Nothing
+
+post :: (String, Maybe BS.ByteString) -> IO Response
+post (url, body) =
+  send $ Request POST url [] body
+
+put :: (String, Maybe BS.ByteString) -> IO Response
+put (url, body) =
+  send $ Request PUT url [] body
