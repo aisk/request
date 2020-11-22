@@ -1,3 +1,4 @@
+{-# LANGUAGE DatatypeContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.HTTP.Request
@@ -7,6 +8,7 @@ module Network.HTTP.Request
   , Headers
   ) where
 
+import qualified Data.String               as S
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as C
 import qualified Data.ByteString.Lazy      as LBS
@@ -31,14 +33,14 @@ data Method
   | TRACE
   deriving (Eq, Show)
 
-data Request = Request
+data (S.IsString a) => Request a = Request
   { requestMethod  :: Method
   , requestUrl     :: String
   , requestHeaders :: Headers
-  , requestBody    :: Maybe BS.ByteString
+  , requestBody    :: Maybe a
   } deriving (Show)
 
-toLowlevelRequest :: Request -> IO LowLevelClient.Request
+toLowlevelRequest :: (S.IsString a) => Request a -> IO LowLevelClient.Request
 toLowlevelRequest req = do
   initReq <- LowLevelClient.parseRequest $ requestUrl req
   return $ initReq { LowLevelClient.method = C.pack . show $ requestMethod req
@@ -67,7 +69,7 @@ getManagerForUrl url =
     if "https" `List.isPrefixOf` url then LowLevelClient.newManager LowLevelTLSClient.tlsManagerSettings
                                      else LowLevelClient.newManager LowLevelClient.defaultManagerSettings
 
-send :: Request -> IO Response
+send :: (S.IsString a) => Request a -> IO Response
 send req = do
   manager <- getManagerForUrl $ requestUrl req
   llreq <- toLowlevelRequest req
