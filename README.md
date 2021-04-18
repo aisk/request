@@ -93,7 +93,7 @@ These shortcuts' definitions are simple and direct. You are encouraged to add yo
 
 ## About the Project
 
-Request is &copy; 2016-2020 by [aisk](https://github.com/aisk).
+Request is &copy; 2020-2021 by [aisk](https://github.com/aisk).
 
 ### License
 
