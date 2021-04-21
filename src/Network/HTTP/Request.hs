@@ -2,10 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.HTTP.Request
-  ( Request
-  , Response
-  , Header
+  ( Header
   , Headers
+  , Request
+  , Response
+  , get
+  , post
+  , put
+  , send
   ) where
 
 import qualified Data.String               as S
