@@ -10,6 +10,7 @@ module Network.HTTP.Request
   , post
   , put
   , send
+  , Method (..)
   ) where
 
 import qualified Data.String               as S
