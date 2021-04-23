@@ -4,13 +4,20 @@
 module Network.HTTP.Request
   ( Header
   , Headers
+  , Method (..)
   , Request
   , Response
   , get
   , post
   , put
+  , requestBody
+  , requestHeaders
+  , requestMethod
+  , requestUrl
+  , responseBody
+  , responseHeaders
+  , responseStatus
   , send
-  , Method (..)
   ) where
 
 import qualified Data.String               as S
