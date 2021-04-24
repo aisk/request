@@ -43,7 +43,17 @@ data Method
   | POST
   | PUT
   | TRACE
-  deriving (Eq, Show)
+  | Method String
+
+instance Show Method where
+  show GET = "GET"
+  show HEAD = "HEAD"
+  show OPTIONS = "OPTIONS"
+  show PATCH = "PATCH"
+  show POST = "POST"
+  show PUT = "PUT"
+  show TRACE = "TRACE"
+  show (Method method) = method
 
 data (S.IsString a) => Request a = Request
   { requestMethod  :: Method
