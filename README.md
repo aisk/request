@@ -4,6 +4,10 @@
 
 HTTP client for haskell, inpired by [requests](https://requests.readthedocs.io/) and [http-dispatch](https://github.com/owainlewis/http-dispatch).
 
+## Installation
+
+This pacakge is published on [hackage](http://hackage.haskell.org/package/request) with the same name `request`, you can install it with cabal or stack or nix as any other hackage packages.
+
 ## Usage
 
 You can try this in haskell REPL once you have `request` installed:
@@ -90,6 +94,10 @@ put (url, body) =
 ```
 
 These shortcuts' definitions are simple and direct. You are encouraged to add your own if the built-in does not match your use cases, like add custom headers in every request.
+
+## API Documents
+
+See the hackage page: http://hackage.haskell.org/package/request/docs/Network-HTTP-Request.html
 
 ## About the Project
 
