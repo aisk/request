@@ -5,18 +5,11 @@ module Network.HTTP.Request
   ( Header
   , Headers
   , Method (..)
-  , Request
-  , Response
+  , Request (..)
+  , Response (..)
   , get
   , post
   , put
-  , requestBody
-  , requestHeaders
-  , requestMethod
-  , requestUrl
-  , responseBody
-  , responseHeaders
-  , responseStatus
   , send
   ) where
 
