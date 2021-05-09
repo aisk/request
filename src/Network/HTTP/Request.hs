@@ -79,14 +79,9 @@ fromLowLevelRequest res =
                          in
                          (hk, v)) headers) body
 
-getManagerForUrl :: String -> IO LowLevelClient.Manager
-getManagerForUrl url =
-    if "https" `List.isPrefixOf` url then LowLevelTLSClient.getGlobalManager
-                                     else LowLevelClient.newManager LowLevelClient.defaultManagerSettings
-
 send :: (S.IsString a) => Request a -> IO Response
 send req = do
-  manager <- getManagerForUrl $ requestUrl req
+  manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
   return $ fromLowLevelRequest llres
