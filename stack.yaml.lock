@@ -6,7 +6,7 @@
 packages: []
 snapshots:
 - completed:
-    sha256: 8809197159ce65ec2d66f91982e4844ad0c2cbd1126df42146dd103c0ea6cac0
-    size: 640063
-    url: https://mirrors.tuna.tsinghua.edu.cn/stackage/stackage-snapshots/lts/21/23.yaml
-  original: lts-21.23
+    sha256: 3f59fb01f884a786c64e247ffe145df5f6045d929b1d2752b5ce768e37fd44e5
+    size: 724510
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/24/0.yaml
+  original: lts-24.0
