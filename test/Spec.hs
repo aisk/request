@@ -23,3 +23,7 @@ main = hspec $ do
     it "should put to httpbin.org/put and return 200 OK" $ do
       response <- put ("https://postman-echo.com/put", Just "Hello!")
       responseStatus response `shouldBe` 200
+
+    it "should patch to httpbin.org/patch and return 200 OK" $ do
+      response <- patch ("https://postman-echo.com/patch", Just "Hello!")
+      responseStatus response `shouldBe` 200

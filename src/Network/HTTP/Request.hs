@@ -8,6 +8,7 @@ module Network.HTTP.Request
   , Request (..)
   , Response (..)
   , get
+  , patch
   , post
   , put
   , send
@@ -39,6 +40,7 @@ data Method
   | Method String
 
 instance Show Method where
+  show DELETE = "DELETE"
   show GET = "GET"
   show HEAD = "HEAD"
   show OPTIONS = "OPTIONS"
@@ -101,3 +103,7 @@ post (url, body) =
 put :: (String, Maybe BS.ByteString) -> IO Response
 put (url, body) =
   send $ Request PUT url [] body
+
+patch :: (String, Maybe BS.ByteString) -> IO Response
+patch (url, body) =
+  send $ Request PATCH url [] body
