@@ -1,4 +1,3 @@
-{-# LANGUAGE DatatypeContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.HTTP.Request
@@ -50,7 +49,7 @@ instance Show Method where
   show TRACE = "TRACE"
   show (Method method) = method
 
-data (S.IsString a) => Request a = Request
+data Request a = Request
   { requestMethod  :: Method
   , requestUrl     :: String
   , requestHeaders :: Headers
