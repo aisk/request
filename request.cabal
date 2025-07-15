@@ -27,3 +27,12 @@ library
 source-repository head
   type:     git
   location: https://github.com/aisk/request
+
+test-suite spec
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , request
+                     , hspec
+  default-language:    Haskell2010
