@@ -1,5 +1,5 @@
 name:                request
-version:             0.2.2.0
+version:             0.2.3.0
 -- synopsis:
 description:         "HTTP client for haskell, inpired by requests and http-dispatch."
 homepage:            https://github.com/aisk/request#readme
@@ -7,7 +7,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              An Long
 maintainer:          aisk1988@gmail.com
-copyright:           2020 An Long
+copyright:           2020 AN Long
 category:            Web
 build-type:          Simple
 extra-source-files:  README.md
