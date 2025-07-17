@@ -35,15 +35,19 @@ This library supports modern Haskell record dot syntax. To use it, enable these 
 {-# LANGUAGE OverloadedRecordDot #-}
 
 import Network.HTTP.Request
+import qualified Data.ByteString as BS
 
 -- Create request using record dot syntax
 let req = Request { method = GET, url = "https://api.leancloud.cn/1.1/date", headers = [], body = Nothing }
-response <- send req
 
--- Access response fields with dot syntax
-print response.status        -- 200
-print response.headers       -- [("content-type","application/json")]
-print response.body          -- "{\"__type\":\"Date\",\"iso\":\"2021-09-01T00:00:00.000Z\"}"
+-- Response with ByteString body
+responseBS <- send req :: IO (Response BS.ByteString)
+print responseBS.status        -- 200
+print responseBS.body          -- ByteString response
+
+-- Response with String body
+responseStr <- send req :: IO (Response String)
+print responseStr.body         -- String response
 ```
 
 ## Core API
@@ -68,7 +72,7 @@ data Request a = Request
 Once you have constructed your own `Request` record, you can call the `send` function to send it to the server. The `send` function's type is:
 
 ```haskell
-send :: (IsString a) => Request a -> IO Response
+send :: (IsString a) => Request a -> IO (Response a)
 ```
 
 ### Response
@@ -76,12 +80,14 @@ send :: (IsString a) => Request a -> IO Response
 `Response` is what you got from the server URL.
 
 ```haskell
-data Response = Response
+data Response a = Response
   { status  :: Int
   , headers :: Headers
-  , body    :: Data.ByteString.ByteString
+  , body    :: a
   } deriving (Show)
 ```
+
+The response body type `a` can be any type that implements the `IsString` constraint, allowing flexible handling of response data.
 
 ### Backward Compatibility
 
@@ -93,7 +99,7 @@ For users who prefer not to use the language extensions, you can still:
 ### Example
 
 ```haskell
-:set -XOverloadedStrings
+{-# LANGUAGE OverloadedStrings #-}
 
 import Network.HTTP.Request
 
@@ -102,9 +108,6 @@ let req = Request GET "https://api.leancloud.cn/1.1/date" [] Nothing
 -- Send it.
 res <- send req
 -- Access the fields on Response.
-print $ status res
-
--- Or with backward compatibility:
 print $ responseStatus res
 ```
 
@@ -113,19 +116,19 @@ print $ responseStatus res
 As you expected, there are some shortcuts for the most used scenarios.
 
 ```haskell
-get :: String -> IO Response
+get :: String -> IO (Response BS.ByteString)
 get url =
   send $ Request { method = GET, url = url, headers = [], body = Nothing }
 
-delete :: String -> IO Response
+delete :: String -> IO (Response BS.ByteString)
 delete url =
   send $ Request { method = DELETE, url = url, headers = [], body = Nothing }
 
-post :: (String, Maybe Data.ByteString.ByteString) -> IO Response
+post :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
 post (url, body) =
   send $ Request { method = POST, url = url, headers = [], body = body }
 
-put :: (String, Maybe Data.ByteString.ByteString) -> IO Response
+put :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
 put (url, body) =
   send $ Request { method = PUT, url = url, headers = [], body = body }
 ```
