@@ -89,27 +89,27 @@ toLowlevelRequest req = do
         LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) $ requestHeaders req
       }
 
-data Response = Response
+data Response a = Response
   { status :: Int,
     headers :: Headers,
-    body :: BS.ByteString
+    body :: a
   }
   deriving (Show)
 
 -- Compatibility accessor functions for Response
-responseStatus :: Response -> Int
+responseStatus :: Response a -> Int
 responseStatus res = res.status
 
-responseHeaders :: Response -> Headers
+responseHeaders :: Response a -> Headers
 responseHeaders res = res.headers
 
-responseBody :: Response -> BS.ByteString
+responseBody :: Response a -> a
 responseBody res = res.body
 
-fromLowLevelRequest :: LowLevelClient.Response LBS.ByteString -> Response
+fromLowLevelRequest :: (S.IsString a) => LowLevelClient.Response LBS.ByteString -> Response a
 fromLowLevelRequest res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
-      body = LBS.toStrict $ LowLevelClient.responseBody res
+      body = S.fromString . C.unpack . LBS.toStrict $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
    in Response
         status
@@ -122,29 +122,29 @@ fromLowLevelRequest res =
         )
         body
 
-send :: (S.IsString a) => Request a -> IO Response
+send :: (S.IsString a) => Request a -> IO (Response a)
 send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
   return $ fromLowLevelRequest llres
 
-get :: String -> IO Response
+get :: String -> IO (Response BS.ByteString)
 get url =
   send $ Request GET url [] Nothing
 
-delete :: String -> IO Response
+delete :: String -> IO (Response BS.ByteString)
 delete url =
   send $ Request DELETE url [] Nothing
 
-post :: (String, Maybe BS.ByteString) -> IO Response
+post :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
 post (url, body) =
   send $ Request POST url [] body
 
-put :: (String, Maybe BS.ByteString) -> IO Response
+put :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
 put (url, body) =
   send $ Request PUT url [] body
 
-patch :: (String, Maybe BS.ByteString) -> IO Response
+patch :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
 patch (url, body) =
   send $ Request PATCH url [] body

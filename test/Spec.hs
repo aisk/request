@@ -6,6 +6,7 @@ module Main where
 
 import Network.HTTP.Request
 import Test.Hspec
+import qualified Data.ByteString as BS
 
 main :: IO ()
 main = hspec $ do
@@ -35,3 +36,14 @@ main = hspec $ do
     response <- send req
     response.status `shouldBe` 200
     response.headers `shouldSatisfy` (not . null)
+
+  it "should access response body with different IsString types" $ do
+    -- Test with ByteString body
+    let req1 = Request { method = GET, url = "http://example.com", headers = [], body = Nothing }
+    response1 <- send req1 :: IO (Response BS.ByteString)
+    BS.length response1.body `shouldSatisfy` (> 0)
+
+    -- Test with String body
+    let req2 = Request { method = GET, url = "http://example.com", headers = [], body = Nothing }
+    response2 <- send req2 :: IO (Response String)
+    not (null response2.body) `shouldBe` True

@@ -35,4 +35,5 @@ test-suite spec
   build-depends:       base
                      , request
                      , hspec
+                     , bytestring         >= 0.10.12 && < 0.13
   default-language:    Haskell2010
