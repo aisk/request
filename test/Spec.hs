@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -27,3 +29,9 @@ main = hspec $ do
     it "should patch to httpbin.org/patch and return 200 OK" $ do
       response <- patch ("https://postman-echo.com/patch", Just "Hello!")
       responseStatus response `shouldBe` 200
+
+  it "should use dot record syntax to create and access request/response" $ do
+    let req = Request { method = GET, url = "http://example.com", headers = [("User-Agent", "Haskell-Request")], body = Nothing }
+    response <- send req
+    response.status `shouldBe` 200
+    response.headers `shouldSatisfy` (not . null)

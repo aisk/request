@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.HTTP.Request
@@ -11,6 +13,13 @@ module Network.HTTP.Request
     post,
     put,
     send,
+    requestMethod,
+    requestUrl,
+    requestHeaders,
+    requestBody,
+    responseStatus,
+    responseHeaders,
+    responseBody,
   )
 where
 
@@ -51,12 +60,25 @@ instance Show Method where
   show (Method method) = method
 
 data Request a = Request
-  { requestMethod :: Method,
-    requestUrl :: String,
-    requestHeaders :: Headers,
-    requestBody :: Maybe a
+  { method :: Method,
+    url :: String,
+    headers :: Headers,
+    body :: Maybe a
   }
   deriving (Show)
+
+-- Compatibility accessor functions
+requestMethod :: Request a -> Method
+requestMethod req = req.method
+
+requestUrl :: Request a -> String
+requestUrl req = req.url
+
+requestHeaders :: Request a -> Headers
+requestHeaders req = req.headers
+
+requestBody :: Request a -> Maybe a
+requestBody req = req.body
 
 toLowlevelRequest :: (S.IsString a) => Request a -> IO LowLevelClient.Request
 toLowlevelRequest req = do
@@ -68,11 +90,21 @@ toLowlevelRequest req = do
       }
 
 data Response = Response
-  { responseStatus :: Int,
-    responseHeaders :: Headers,
-    responseBody :: BS.ByteString
+  { status :: Int,
+    headers :: Headers,
+    body :: BS.ByteString
   }
   deriving (Show)
+
+-- Compatibility accessor functions for Response
+responseStatus :: Response -> Int
+responseStatus res = res.status
+
+responseHeaders :: Response -> Headers
+responseHeaders res = res.headers
+
+responseBody :: Response -> BS.ByteString
+responseBody res = res.body
 
 fromLowLevelRequest :: LowLevelClient.Response LBS.ByteString -> Response
 fromLowLevelRequest res =
