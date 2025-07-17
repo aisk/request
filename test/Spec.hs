@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
-import Test.Hspec
 import Network.HTTP.Request
-
+import Test.Hspec
 
 main :: IO ()
 main = hspec $ do
