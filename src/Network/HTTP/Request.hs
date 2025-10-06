@@ -27,7 +27,6 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.CaseInsensitive as CI
-import qualified Data.List as List
 import qualified Data.String as S
 import qualified Network.HTTP.Client as LowLevelClient
 import qualified Network.HTTP.Client.TLS as LowLevelTLSClient
@@ -130,22 +129,22 @@ send req = do
   llres <- LowLevelClient.httpLbs llreq manager
   return $ fromLowLevelRequest llres
 
-get :: String -> IO (Response BS.ByteString)
+get :: (S.IsString a) => String -> IO (Response a)
 get url =
   send $ Request GET url [] Nothing
 
-delete :: String -> IO (Response BS.ByteString)
+delete :: (S.IsString a) => String -> IO (Response a)
 delete url =
   send $ Request DELETE url [] Nothing
 
-post :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
-post (url, body) =
+post :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+post url body =
   send $ Request POST url [] body
 
-put :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
-put (url, body) =
+put :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+put url body =
   send $ Request PUT url [] body
 
-patch :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
-patch (url, body) =
+patch :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+patch url body =
   send $ Request PATCH url [] body
