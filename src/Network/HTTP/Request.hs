@@ -106,8 +106,8 @@ responseHeaders res = res.headers
 responseBody :: Response a -> a
 responseBody res = res.body
 
-fromLowLevelRequest :: (S.IsString a) => LowLevelClient.Response LBS.ByteString -> Response a
-fromLowLevelRequest res =
+fromLowLevelResponse :: (S.IsString a) => LowLevelClient.Response LBS.ByteString -> Response a
+fromLowLevelResponse res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
       body = S.fromString . C.unpack . LBS.toStrict $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
@@ -127,7 +127,7 @@ send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
-  return $ fromLowLevelRequest llres
+  return $ fromLowLevelResponse llres
 
 get :: (S.IsString a) => String -> IO (Response a)
 get url =
