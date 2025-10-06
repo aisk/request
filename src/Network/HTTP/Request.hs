@@ -59,34 +59,35 @@ instance Show Method where
   show TRACE = "TRACE"
   show (Method method) = method
 
-data Request a = Request
+data Request = Request
   { method :: Method,
     url :: String,
     headers :: Headers,
-    body :: Maybe a
+    body :: Maybe BS.ByteString
   }
   deriving (Show)
 
 -- Compatibility accessor functions
-requestMethod :: Request a -> Method
+requestMethod :: Request -> Method
 requestMethod req = req.method
 
-requestUrl :: Request a -> String
+requestUrl :: Request -> String
 requestUrl req = req.url
 
-requestHeaders :: Request a -> Headers
+requestHeaders :: Request -> Headers
 requestHeaders req = req.headers
 
-requestBody :: Request a -> Maybe a
+requestBody :: Request -> Maybe BS.ByteString
 requestBody req = req.body
 
-toLowlevelRequest :: (S.IsString a) => Request a -> IO LowLevelClient.Request
+toLowlevelRequest :: Request -> IO LowLevelClient.Request
 toLowlevelRequest req = do
-  initReq <- LowLevelClient.parseRequest $ requestUrl req
+  initReq <- LowLevelClient.parseRequest req.url
   return $
     initReq
-      { LowLevelClient.method = C.pack . show $ requestMethod req,
-        LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) $ requestHeaders req
+      { LowLevelClient.method = C.pack . show $ req.method,
+        LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) req.headers,
+        LowLevelClient.requestBody = maybe mempty LowLevelClient.RequestBodyBS req.body
       }
 
 data Response a = Response
@@ -122,7 +123,7 @@ fromLowLevelRequest res =
         )
         body
 
-send :: (S.IsString a) => Request a -> IO (Response a)
+send :: (S.IsString a) => Request -> IO (Response a)
 send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
