@@ -9,6 +9,7 @@ module Network.HTTP.Request
     Request (..),
     Response (..),
     get,
+    delete,
     patch,
     post,
     put,
