@@ -29,6 +29,8 @@ import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.CaseInsensitive as CI
 import qualified Data.String as S
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Client as LowLevelClient
 import qualified Network.HTTP.Client.TLS as LowLevelTLSClient
 import qualified Network.HTTP.Types.Status as LowLevelStatus
@@ -110,7 +112,7 @@ responseBody res = res.body
 fromLowLevelResponse :: (S.IsString a) => LowLevelClient.Response LBS.ByteString -> Response a
 fromLowLevelResponse res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
-      body = S.fromString . C.unpack . LBS.toStrict $ LowLevelClient.responseBody res
+      body = S.fromString . T.unpack . T.decodeUtf8 . LBS.toStrict $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
    in Response
         status

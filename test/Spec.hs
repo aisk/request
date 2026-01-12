@@ -4,9 +4,12 @@
 
 module Main where
 
+import Data.List (isInfixOf)
 import Network.HTTP.Request
 import Test.Hspec
 import qualified Data.ByteString as BS
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 
 main :: IO ()
 main = hspec $ do
@@ -47,3 +50,27 @@ main = hspec $ do
       let req2 = Request { method = GET, url = "http://example.com", headers = [], body = Nothing }
       response2 <- send req2 :: IO (Response String)
       not (null response2.body) `shouldBe` True
+
+    it "should correctly handle UTF-8 encoded response (Chinese characters)" $ do
+      let msg = "{\"message\":\"你好世界\"}"
+      let req = Request
+            { method = POST
+            , url = "https://postman-echo.com/post"
+            , headers = [("Content-Type", "application/json; charset=utf-8")]
+            , body = Just (T.encodeUtf8 $ T.pack msg)
+            }
+      response <- send req
+      responseStatus response `shouldBe` 200
+      responseBody response `shouldSatisfy` isInfixOf "你好世界"
+
+    it "should correctly handle UTF-8 encoded response (emoji)" $ do
+      let msg = "{\"message\":\"Hello 🌍\"}"
+      let req = Request
+            { method = POST
+            , url = "https://postman-echo.com/post"
+            , headers = [("Content-Type", "application/json; charset=utf-8")]
+            , body = Just (T.encodeUtf8 $ T.pack msg)
+            }
+      response <- send req
+      responseStatus response `shouldBe` 200
+      responseBody response `shouldSatisfy` isInfixOf "🌍"
