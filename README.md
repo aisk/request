@@ -12,34 +12,24 @@ This pacakge is published on [hackage](http://hackage.haskell.org/package/reques
 
 ## Usage
 
-You can try this in haskell REPL once you have `request` installed:
-
-```haskell
-import Network.HTTP.Request
-
-resp <- get "https://api.leancloud.cn/1.1/date"
-print $ responseStatus resp
-```
-
-## Record Dot Syntax Support
-
-This library supports modern Haskell record dot syntax. To use it, enable these language extensions:
+This library supports modern Haskell record dot syntax. First, enable these language extensions:
 
 ```haskell
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 ```
 
-### Creating Records with Dot Syntax
+Then you can use the library like this:
 
 ```haskell
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedRecordDot #-}
-
 import Network.HTTP.Request
 import qualified Data.ByteString as BS
 
--- Create request using record dot syntax
+-- Using shortcuts
+resp <- get "https://api.leancloud.cn/1.1/date"
+print resp.status        -- 200
+
+-- Or construct a Request manually
 let req = Request { method = GET, url = "https://api.leancloud.cn/1.1/date", headers = [], body = Nothing }
 
 -- Response with ByteString body
@@ -91,25 +81,22 @@ data Response a = Response
 
 The response body type `a` can be any type that implements the `IsString` constraint, allowing flexible handling of response data.
 
-### Backward Compatibility
+### Without Language Extensions
 
-For users who prefer not to use the language extensions, you can still:
+If you prefer not to use the language extensions, you can still use the library with the traditional syntax:
 
 - Create requests using positional arguments: `Request GET "url" [] Nothing`
-- Use prefixed accessor functions: `requestStatus response`, `requestHeaders response`, etc.
-
-### Example
+- Use prefixed accessor functions: `responseStatus response`, `responseHeaders response`, etc.
 
 ```haskell
-{-# LANGUAGE OverloadedStrings #-}
 
 import Network.HTTP.Request
 
--- Construct a Request record.
+-- Construct a Request using positional arguments
 let req = Request GET "https://api.leancloud.cn/1.1/date" [] Nothing
--- Send it.
+-- Send it
 res <- send req
--- Access the fields on Response.
+-- Access the fields using prefixed accessor functions
 print $ responseStatus res
 ```
 
@@ -143,7 +130,7 @@ See the hackage page: http://hackage.haskell.org/package/request/docs/Network-HT
 
 ## About the Project
 
-Request is &copy; 2020-2021 by [aisk](https://github.com/aisk).
+Request is &copy; 2020-2026 by [AN Long](https://github.com/aisk).
 
 ### License
 
