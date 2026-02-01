@@ -51,11 +51,11 @@ Request's API has three core concepts: `Request` record type, `Response` record 
 `Request` is all about the information you will send to the target URL.
 
 ```haskell
-data Request a = Request
+data Request = Request
   { method  :: Method
   , url     :: String
   , headers :: Headers
-  , body    :: Maybe a
+  , body    :: Maybe BS.ByteString
   } deriving (Show)
 ```
 
@@ -64,7 +64,7 @@ data Request a = Request
 Once you have constructed your own `Request` record, you can call the `send` function to send it to the server. The `send` function's type is:
 
 ```haskell
-send :: (IsString a) => Request a -> IO (Response a)
+send :: (IsString a) => Request -> IO (Response a)
 ```
 
 ### Response
@@ -105,21 +105,25 @@ print $ responseStatus res
 As you expected, there are some shortcuts for the most used scenarios.
 
 ```haskell
-get :: String -> IO (Response BS.ByteString)
+get :: (IsString a) => String -> IO (Response a)
 get url =
-  send $ Request { method = GET, url = url, headers = [], body = Nothing }
+  send $ Request GET url [] Nothing
 
-delete :: String -> IO (Response BS.ByteString)
+delete :: (IsString a) => String -> IO (Response a)
 delete url =
-  send $ Request { method = DELETE, url = url, headers = [], body = Nothing }
+  send $ Request DELETE url [] Nothing
 
-post :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
-post (url, body) =
-  send $ Request { method = POST, url = url, headers = [], body = body }
+post :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+post url body =
+  send $ Request POST url [] body
 
-put :: (String, Maybe BS.ByteString) -> IO (Response BS.ByteString)
-put (url, body) =
-  send $ Request { method = PUT, url = url, headers = [], body = body }
+put :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+put url body =
+  send $ Request PUT url [] body
+
+patch :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+patch url body =
+  send $ Request PATCH url [] body
 ```
 
 These shortcuts' definitions are simple and direct. You are encouraged to add your own if the built-in does not match your use cases, like add custom headers in every request.
