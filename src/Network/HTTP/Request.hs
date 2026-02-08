@@ -65,17 +65,7 @@ data Method
   | PUT
   | TRACE
   | Method String
-
-instance Show Method where
-  show DELETE = "DELETE"
-  show GET = "GET"
-  show HEAD = "HEAD"
-  show OPTIONS = "OPTIONS"
-  show PATCH = "PATCH"
-  show POST = "POST"
-  show PUT = "PUT"
-  show TRACE = "TRACE"
-  show (Method method) = method
+  deriving (Show, Eq)
 
 data Request = Request
   { method :: Method,
