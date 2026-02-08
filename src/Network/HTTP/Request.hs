@@ -1,10 +1,12 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.HTTP.Request
   ( Header,
     Headers,
+    FromResponseBody (..),
     Method (..),
     Request (..),
     Response (..),
@@ -28,7 +30,6 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.CaseInsensitive as CI
-import qualified Data.String as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Network.HTTP.Client as LowLevelClient
@@ -38,6 +39,21 @@ import qualified Network.HTTP.Types.Status as LowLevelStatus
 type Header = (BS.ByteString, BS.ByteString)
 
 type Headers = [Header]
+
+class FromResponseBody a where
+  fromResponseBody :: LBS.ByteString -> a
+
+instance FromResponseBody BS.ByteString where
+  fromResponseBody = LBS.toStrict
+
+instance FromResponseBody LBS.ByteString where
+  fromResponseBody = id
+
+instance FromResponseBody T.Text where
+  fromResponseBody = T.decodeUtf8Lenient . LBS.toStrict
+
+instance FromResponseBody String where
+  fromResponseBody = T.unpack . T.decodeUtf8Lenient . LBS.toStrict
 
 data Method
   = DELETE
@@ -109,10 +125,10 @@ responseHeaders res = res.headers
 responseBody :: Response a -> a
 responseBody res = res.body
 
-fromLowLevelResponse :: (S.IsString a) => LowLevelClient.Response LBS.ByteString -> Response a
+fromLowLevelResponse :: (FromResponseBody a) => LowLevelClient.Response LBS.ByteString -> Response a
 fromLowLevelResponse res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
-      body = S.fromString . T.unpack . T.decodeUtf8 . LBS.toStrict $ LowLevelClient.responseBody res
+      body = fromResponseBody $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
    in Response
         status
@@ -125,29 +141,29 @@ fromLowLevelResponse res =
         )
         body
 
-send :: (S.IsString a) => Request -> IO (Response a)
+send :: (FromResponseBody a) => Request -> IO (Response a)
 send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
   return $ fromLowLevelResponse llres
 
-get :: (S.IsString a) => String -> IO (Response a)
+get :: (FromResponseBody a) => String -> IO (Response a)
 get url =
   send $ Request GET url [] Nothing
 
-delete :: (S.IsString a) => String -> IO (Response a)
+delete :: (FromResponseBody a) => String -> IO (Response a)
 delete url =
   send $ Request DELETE url [] Nothing
 
-post :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+post :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 post url body =
   send $ Request POST url [] body
 
-put :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+put :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 put url body =
   send $ Request PUT url [] body
 
-patch :: (S.IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+patch :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 patch url body =
   send $ Request PATCH url [] body

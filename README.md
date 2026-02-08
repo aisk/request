@@ -64,7 +64,7 @@ data Request = Request
 Once you have constructed your own `Request` record, you can call the `send` function to send it to the server. The `send` function's type is:
 
 ```haskell
-send :: (IsString a) => Request -> IO (Response a)
+send :: (FromResponseBody a) => Request -> IO (Response a)
 ```
 
 ### Response
@@ -79,7 +79,7 @@ data Response a = Response
   } deriving (Show)
 ```
 
-The response body type `a` can be any type that implements the `IsString` constraint, allowing flexible handling of response data.
+The response body type `a` can be any type that implements the `FromResponseBody` constraint, allowing flexible handling of response data.
 
 ### Without Language Extensions
 
@@ -105,23 +105,23 @@ print $ responseStatus res
 As you expected, there are some shortcuts for the most used scenarios.
 
 ```haskell
-get :: (IsString a) => String -> IO (Response a)
+get :: (FromResponseBody a) => String -> IO (Response a)
 get url =
   send $ Request GET url [] Nothing
 
-delete :: (IsString a) => String -> IO (Response a)
+delete :: (FromResponseBody a) => String -> IO (Response a)
 delete url =
   send $ Request DELETE url [] Nothing
 
-post :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+post :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 post url body =
   send $ Request POST url [] body
 
-put :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+put :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 put url body =
   send $ Request PUT url [] body
 
-patch :: (IsString a) => String -> Maybe BS.ByteString -> IO (Response a)
+patch :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
 patch url body =
   send $ Request PATCH url [] body
 ```
