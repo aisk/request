@@ -22,15 +22,15 @@ main = hspec $ do
       response <- send (Request GET "http://example.com" [] Nothing) :: IO (Response String)
       responseStatus response `shouldBe` 200
 
-    it "should post to httpbin.org/post and return 200 OK" $ do
+    it "should post to postman-echo.com/post and return 200 OK" $ do
       response <- post "https://postman-echo.com/post" (Just "Hello!") :: IO (Response String)
       responseStatus response `shouldBe` 200
 
-    it "should put to httpbin.org/put and return 200 OK" $ do
+    it "should put to postman-echo.com/put and return 200 OK" $ do
       response <- put "https://postman-echo.com/put" (Just "Hello!") :: IO (Response String)
       responseStatus response `shouldBe` 200
 
-    it "should patch to httpbin.org/patch and return 200 OK" $ do
+    it "should patch to postman-echo.com/patch and return 200 OK" $ do
       response <- patch "https://postman-echo.com/patch" (Just "Hello!") :: IO (Response String)
       responseStatus response `shouldBe` 200
 
