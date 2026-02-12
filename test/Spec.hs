@@ -1,15 +1,26 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase  #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
+import Data.Aeson (FromJSON)
 import Data.List (isInfixOf)
+import GHC.Generics (Generic)
 import Network.HTTP.Request
 import Test.Hspec
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+
+data Date = Date
+  { __type :: String
+  , iso :: String
+  } deriving (Show, Generic)
+
+instance FromJSON Date
 
 main :: IO ()
 main = hspec $ do
@@ -74,3 +85,9 @@ main = hspec $ do
       response <- send req
       responseStatus response `shouldBe` 200
       responseBody response `shouldSatisfy` isInfixOf "🌍"
+
+    it "should parse JSON response with aeson" $ do
+      response <- get "https://api.leancloud.cn/1.1/date" :: IO (Response Date)
+      responseStatus response `shouldBe` 200
+      __type (responseBody response) `shouldBe` "Date"
+      iso (responseBody response) `shouldSatisfy` not . null
