@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Network.HTTP.Request
   ( Header,
@@ -26,6 +28,8 @@ module Network.HTTP.Request
   )
 where
 
+import Control.Exception (throwIO)
+import Data.Aeson (AesonException (..), FromJSON, eitherDecode)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
@@ -41,19 +45,22 @@ type Header = (BS.ByteString, BS.ByteString)
 type Headers = [Header]
 
 class FromResponseBody a where
-  fromResponseBody :: LBS.ByteString -> a
+  fromResponseBody :: LBS.ByteString -> Either String a
 
 instance FromResponseBody BS.ByteString where
-  fromResponseBody = LBS.toStrict
+  fromResponseBody = Right . LBS.toStrict
 
 instance FromResponseBody LBS.ByteString where
-  fromResponseBody = id
+  fromResponseBody = Right
 
 instance FromResponseBody T.Text where
-  fromResponseBody = T.decodeUtf8Lenient . LBS.toStrict
+  fromResponseBody = Right . T.decodeUtf8Lenient . LBS.toStrict
 
 instance FromResponseBody String where
-  fromResponseBody = T.unpack . T.decodeUtf8Lenient . LBS.toStrict
+  fromResponseBody = Right . T.unpack . T.decodeUtf8Lenient . LBS.toStrict
+
+instance {-# OVERLAPPABLE #-} (FromJSON a) => FromResponseBody a where
+  fromResponseBody = eitherDecode
 
 data Method
   = DELETE
@@ -115,28 +122,33 @@ responseHeaders res = res.headers
 responseBody :: Response a -> a
 responseBody res = res.body
 
-fromLowLevelResponse :: (FromResponseBody a) => LowLevelClient.Response LBS.ByteString -> Response a
+fromLowLevelResponse :: (FromResponseBody a) => LowLevelClient.Response LBS.ByteString -> Either String (Response a)
 fromLowLevelResponse res =
   let status = LowLevelStatus.statusCode . LowLevelClient.responseStatus $ res
-      body = fromResponseBody $ LowLevelClient.responseBody res
       headers = LowLevelClient.responseHeaders res
-   in Response
-        status
-        ( map
-            ( \(k, v) ->
-                let hk = CI.original k
-                 in (hk, v)
-            )
-            headers
-        )
-        body
+   in case fromResponseBody $ LowLevelClient.responseBody res of
+        Right body ->
+          Right $
+            Response
+              status
+              ( map
+                  ( \(k, v) ->
+                      let hk = CI.original k
+                       in (hk, v)
+                  )
+                  headers
+              )
+              body
+        Left err -> Left err
 
 send :: (FromResponseBody a) => Request -> IO (Response a)
 send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
   llres <- LowLevelClient.httpLbs llreq manager
-  return $ fromLowLevelResponse llres
+  case fromLowLevelResponse llres of
+    Right res -> return res
+    Left err -> throwIO $ AesonException err
 
 get :: (FromResponseBody a) => String -> IO (Response a)
 get url =

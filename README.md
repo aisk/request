@@ -79,7 +79,34 @@ data Response a = Response
   } deriving (Show)
 ```
 
-The response body type `a` can be any type that implements the `FromResponseBody` constraint, allowing flexible handling of response data.
+The response body type `a` can be any type that implements the `FromResponseBody` constraint, allowing flexible handling of response data. Built-in supported types include `String`, `ByteString`, `Text`, and any type with a `FromJSON` instance.
+
+### JSON Response
+
+For any type with a `FromJSON` instance, the response body will be automatically decoded:
+
+```haskell
+{-# LANGUAGE DeriveGeneric #-}
+
+import Network.HTTP.Request
+import Data.Aeson (FromJSON)
+import GHC.Generics (Generic)
+
+data Date = Date
+  { __type :: String
+  , iso :: String
+  } deriving (Show, Generic)
+
+instance FromJSON Date
+
+main :: IO ()
+main = do
+  response <- get "https://api.leancloud.cn/1.1/date" :: IO (Response Date)
+  print response.status  -- 200
+  print response.body    -- Date { __type = "Date", iso = "..." }
+```
+
+If JSON decoding fails, an `AesonException` will be thrown, which can be caught with `Control.Exception.catch` or `try`.
 
 ### Without Language Extensions
 
