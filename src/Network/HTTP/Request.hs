@@ -9,6 +9,7 @@ module Network.HTTP.Request
   ( Header,
     Headers,
     FromResponseBody (..),
+    ToRequestBody (..),
     Method (..),
     Request (..),
     Response (..),
@@ -29,7 +30,7 @@ module Network.HTTP.Request
 where
 
 import Control.Exception (throwIO)
-import Data.Aeson (AesonException (..), FromJSON, eitherDecode)
+import Data.Aeson (AesonException (..), FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
@@ -61,6 +62,31 @@ instance FromResponseBody String where
 
 instance {-# OVERLAPPABLE #-} (FromJSON a) => FromResponseBody a where
   fromResponseBody = eitherDecode
+
+class ToRequestBody a where
+  toRequestBody :: a -> BS.ByteString
+  requestContentType :: a -> Maybe BS.ByteString
+  requestContentType _ = Nothing
+
+instance ToRequestBody BS.ByteString where
+  toRequestBody = id
+  requestContentType _ = Just "text/plain; charset=utf-8"
+
+instance ToRequestBody LBS.ByteString where
+  toRequestBody = LBS.toStrict
+  requestContentType _ = Just "text/plain; charset=utf-8"
+
+instance ToRequestBody T.Text where
+  toRequestBody = T.encodeUtf8
+  requestContentType _ = Just "text/plain; charset=utf-8"
+
+instance ToRequestBody String where
+  toRequestBody = T.encodeUtf8 . T.pack
+  requestContentType _ = Just "text/plain; charset=utf-8"
+
+instance {-# OVERLAPPABLE #-} (ToJSON a) => ToRequestBody a where
+  toRequestBody = LBS.toStrict . encode
+  requestContentType _ = Just "application/json"
 
 data Method
   = DELETE
@@ -158,14 +184,20 @@ delete :: (FromResponseBody a) => String -> IO (Response a)
 delete url =
   send $ Request DELETE url [] Nothing
 
-post :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
+post :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 post url body =
-  send $ Request POST url [] body
+  let ct = requestContentType body
+      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
+   in send $ Request POST url hdrs (Just (toRequestBody body))
 
-put :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
+put :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 put url body =
-  send $ Request PUT url [] body
+  let ct = requestContentType body
+      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
+   in send $ Request PUT url hdrs (Just (toRequestBody body))
 
-patch :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
+patch :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 patch url body =
-  send $ Request PATCH url [] body
+  let ct = requestContentType body
+      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
+   in send $ Request PATCH url hdrs (Just (toRequestBody body))

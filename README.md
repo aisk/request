@@ -108,6 +108,35 @@ main = do
 
 If JSON decoding fails, an `AesonException` will be thrown, which can be caught with `Control.Exception.catch` or `try`.
 
+### JSON Request Body
+
+The `post`, `put`, and `patch` shortcuts accept any type that implements `ToRequestBody`. For types with a `ToJSON` instance, the body is automatically JSON-encoded and `Content-Type: application/json` is set:
+
+```haskell
+{-# LANGUAGE DeriveGeneric #-}
+
+import Network.HTTP.Request
+import Data.Aeson (ToJSON)
+import GHC.Generics (Generic)
+
+data User = User { name :: String } deriving (Show, Generic)
+
+instance ToJSON User
+
+main :: IO ()
+main = do
+  response <- post "https://httpbin.org/post" (User "Alice") :: IO (Response String)
+  print response.status  -- 200
+```
+
+Built-in `ToRequestBody` instances include `ByteString`, lazy `ByteString`, `Text`, `String` (with `text/plain; charset=utf-8` Content-Type), and any `ToJSON` type (auto JSON encoding + `application/json` Content-Type).
+
+For full manual control, construct a `Request` directly:
+
+```haskell
+send $ Request POST url [("Content-Type", "text/xml")] (Just xmlBytes)
+```
+
 ### Without Language Extensions
 
 If you prefer not to use the language extensions, you can still use the library with the traditional syntax:
@@ -132,25 +161,11 @@ print $ responseStatus res
 As you expected, there are some shortcuts for the most used scenarios.
 
 ```haskell
-get :: (FromResponseBody a) => String -> IO (Response a)
-get url =
-  send $ Request GET url [] Nothing
-
+get    :: (FromResponseBody a) => String -> IO (Response a)
 delete :: (FromResponseBody a) => String -> IO (Response a)
-delete url =
-  send $ Request DELETE url [] Nothing
-
-post :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
-post url body =
-  send $ Request POST url [] body
-
-put :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
-put url body =
-  send $ Request PUT url [] body
-
-patch :: (FromResponseBody a) => String -> Maybe BS.ByteString -> IO (Response a)
-patch url body =
-  send $ Request PATCH url [] body
+post   :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
+put    :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
+patch  :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 ```
 
 These shortcuts' definitions are simple and direct. You are encouraged to add your own if the built-in does not match your use cases, like add custom headers in every request.
