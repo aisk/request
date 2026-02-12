@@ -6,7 +6,7 @@
 
 module Main where
 
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON, ToJSON)
 import Data.List (isInfixOf)
 import GHC.Generics (Generic)
 import Network.HTTP.Request
@@ -22,6 +22,12 @@ data Date = Date
 
 instance FromJSON Date
 
+data Greeting = Greeting
+  { message :: String
+  } deriving (Show, Generic)
+
+instance ToJSON Greeting
+
 main :: IO ()
 main = hspec $ do
   describe "Network.HTTP.Request" $ do
@@ -34,15 +40,15 @@ main = hspec $ do
       responseStatus response `shouldBe` 200
 
     it "should post to postman-echo.com/post and return 200 OK" $ do
-      response <- post "https://postman-echo.com/post" (Just "Hello!") :: IO (Response String)
+      response <- post "https://postman-echo.com/post" ("Hello!" :: BS.ByteString) :: IO (Response String)
       responseStatus response `shouldBe` 200
 
     it "should put to postman-echo.com/put and return 200 OK" $ do
-      response <- put "https://postman-echo.com/put" (Just "Hello!") :: IO (Response String)
+      response <- put "https://postman-echo.com/put" ("Hello!" :: BS.ByteString) :: IO (Response String)
       responseStatus response `shouldBe` 200
 
     it "should patch to postman-echo.com/patch and return 200 OK" $ do
-      response <- patch "https://postman-echo.com/patch" (Just "Hello!") :: IO (Response String)
+      response <- patch "https://postman-echo.com/patch" ("Hello!" :: BS.ByteString) :: IO (Response String)
       responseStatus response `shouldBe` 200
 
     it "should use dot record syntax to create and access request/response" $ do
@@ -91,3 +97,8 @@ main = hspec $ do
       responseStatus response `shouldBe` 200
       __type (responseBody response) `shouldBe` "Date"
       iso (responseBody response) `shouldSatisfy` not . null
+
+    it "should post JSON body with automatic Content-Type" $ do
+      response <- post "https://postman-echo.com/post" (Greeting "Hello!") :: IO (Response String)
+      responseStatus response `shouldBe` 200
+      responseBody response `shouldSatisfy` isInfixOf "application/json"
