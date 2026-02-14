@@ -100,35 +100,39 @@ data Method
   | Method String
   deriving (Show, Eq)
 
-data Request = Request
+data Request a = Request
   { method :: Method,
     url :: String,
     headers :: Headers,
-    body :: Maybe BS.ByteString
+    body :: Maybe a
   }
   deriving (Show)
 
 -- Compatibility accessor functions
-requestMethod :: Request -> Method
+requestMethod :: Request a -> Method
 requestMethod req = req.method
 
-requestUrl :: Request -> String
+requestUrl :: Request a -> String
 requestUrl req = req.url
 
-requestHeaders :: Request -> Headers
+requestHeaders :: Request a -> Headers
 requestHeaders req = req.headers
 
-requestBody :: Request -> Maybe BS.ByteString
+requestBody :: Request a -> Maybe a
 requestBody req = req.body
 
-toLowlevelRequest :: Request -> IO LowLevelClient.Request
+toLowlevelRequest :: (ToRequestBody a) => Request a -> IO LowLevelClient.Request
 toLowlevelRequest req = do
   initReq <- LowLevelClient.parseRequest req.url
+  let autoContentType = req.body >>= requestContentType
+      hasContentType = any (\(k, _) -> k == "Content-Type") req.headers
+      extraHeaders = maybe [] (\c -> [("Content-Type", c)]) $
+        if hasContentType then Nothing else autoContentType
   return $
     initReq
       { LowLevelClient.method = C.pack . show $ req.method,
-        LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) req.headers,
-        LowLevelClient.requestBody = maybe mempty LowLevelClient.RequestBodyBS req.body
+        LowLevelClient.requestHeaders = map (\(k, v) -> (CI.mk k, v)) (req.headers ++ extraHeaders),
+        LowLevelClient.requestBody = maybe mempty (LowLevelClient.RequestBodyBS . toRequestBody) req.body
       }
 
 data Response a = Response
@@ -167,7 +171,7 @@ fromLowLevelResponse res =
               body
         Left err -> Left err
 
-send :: (FromResponseBody a) => Request -> IO (Response a)
+send :: (ToRequestBody a, FromResponseBody b) => Request a -> IO (Response b)
 send req = do
   manager <- LowLevelTLSClient.getGlobalManager
   llreq <- toLowlevelRequest req
@@ -178,26 +182,20 @@ send req = do
 
 get :: (FromResponseBody a) => String -> IO (Response a)
 get url =
-  send $ Request GET url [] Nothing
+  send $ Request GET url [] (Nothing :: Maybe BS.ByteString)
 
 delete :: (FromResponseBody a) => String -> IO (Response a)
 delete url =
-  send $ Request DELETE url [] Nothing
+  send $ Request DELETE url [] (Nothing :: Maybe BS.ByteString)
 
 post :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 post url body =
-  let ct = requestContentType body
-      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
-   in send $ Request POST url hdrs (Just (toRequestBody body))
+  send $ Request POST url [] (Just body)
 
 put :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 put url body =
-  let ct = requestContentType body
-      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
-   in send $ Request PUT url hdrs (Just (toRequestBody body))
+  send $ Request PUT url [] (Just body)
 
 patch :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b)
 patch url body =
-  let ct = requestContentType body
-      hdrs = maybe [] (\c -> [("Content-Type", c)]) ct
-   in send $ Request PATCH url hdrs (Just (toRequestBody body))
+  send $ Request PATCH url [] (Just body)
