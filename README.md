@@ -30,7 +30,7 @@ resp <- get "https://api.leancloud.cn/1.1/date"
 print resp.status        -- 200
 
 -- Or construct a Request manually
-let req = Request { method = GET, url = "https://api.leancloud.cn/1.1/date", headers = [], body = Nothing }
+let req = Request { method = GET, url = "https://api.leancloud.cn/1.1/date", headers = [], body = (Nothing :: Maybe BS.ByteString) }
 
 -- Response with ByteString body
 responseBS <- send req :: IO (Response BS.ByteString)
@@ -48,23 +48,30 @@ Request's API has three core concepts: `Request` record type, `Response` record 
 
 ### Request
 
-`Request` is all about the information you will send to the target URL.
+`Request a` is all about the information you will send to the target URL. The type parameter `a` is the body type, it can be any type that implements `ToRequestBody`. When `send` is called, the body is automatically serialized and the appropriate `Content-Type` header is inferred, unless you set it manually.
 
 ```haskell
-data Request = Request
+data Request a = Request
   { method  :: Method
   , url     :: String
   , headers :: Headers
-  , body    :: Maybe BS.ByteString
+  , body    :: Maybe a
   } deriving (Show)
 ```
 
-### send
+Built-in `ToRequestBody` instances and their inferred `Content-Type`:
 
-Once you have constructed your own `Request` record, you can call the `send` function to send it to the server. The `send` function's type is:
+- `ByteString` / lazy `ByteString` / `Text` / `String` → `text/plain; charset=utf-8`
+- Any type with a `ToJSON` instance → auto JSON encoding + `application/json`
+
+The `Content-Type` is automatically inferred from the body type. You can override it by setting the header manually:
 
 ```haskell
-send :: (FromResponseBody a) => Request -> IO (Response a)
+-- Content-Type is auto-inferred from body type
+send $ Request POST url [] (Just body)
+
+-- Or override Content-Type manually
+send $ Request POST url [("Content-Type", "text/xml")] (Just xmlBytes)
 ```
 
 ### Response
@@ -80,6 +87,16 @@ data Response a = Response
 ```
 
 The response body type `a` can be any type that implements the `FromResponseBody` constraint, allowing flexible handling of response data. Built-in supported types include `String`, `ByteString`, `Text`, and any type with a `FromJSON` instance.
+
+### send
+
+Once you have constructed your own `Request` record, you can call the `send` function to send it to the server. It automatically serializes the body and infers the `Content-Type` header. The `send` function's type is:
+
+```haskell
+send :: (ToRequestBody a, FromResponseBody b) => Request a -> IO (Response b)
+```
+
+## JSON Support
 
 ### JSON Response
 
@@ -129,33 +146,6 @@ main = do
   print response.status  -- 200
 ```
 
-Built-in `ToRequestBody` instances include `ByteString`, lazy `ByteString`, `Text`, `String` (with `text/plain; charset=utf-8` Content-Type), and any `ToJSON` type (auto JSON encoding + `application/json` Content-Type).
-
-For full manual control, construct a `Request` directly:
-
-```haskell
-send $ Request POST url [("Content-Type", "text/xml")] (Just xmlBytes)
-```
-
-### Without Language Extensions
-
-If you prefer not to use the language extensions, you can still use the library with the traditional syntax:
-
-- Create requests using positional arguments: `Request GET "url" [] Nothing`
-- Use prefixed accessor functions: `responseStatus response`, `responseHeaders response`, etc.
-
-```haskell
-
-import Network.HTTP.Request
-
--- Construct a Request using positional arguments
-let req = Request GET "https://api.leancloud.cn/1.1/date" [] Nothing
--- Send it
-res <- send req
--- Access the fields using prefixed accessor functions
-print $ responseStatus res
-```
-
 ## Shortcuts
 
 As you expected, there are some shortcuts for the most used scenarios.
@@ -169,6 +159,25 @@ patch  :: (ToRequestBody a, FromResponseBody b) => String -> a -> IO (Response b
 ```
 
 These shortcuts' definitions are simple and direct. You are encouraged to add your own if the built-in does not match your use cases, like add custom headers in every request.
+
+## Without Language Extensions
+
+If you prefer not to use the language extensions, you can still use the library with the traditional syntax:
+
+- Create requests using positional arguments: `Request GET "url" [] (Nothing :: Maybe BS.ByteString)`
+- Use prefixed accessor functions: `responseStatus response`, `responseHeaders response`, etc.
+
+```haskell
+import Network.HTTP.Request
+import qualified Data.ByteString as BS
+
+-- Construct a Request using positional arguments
+let req = Request GET "https://api.leancloud.cn/1.1/date" [] (Nothing :: Maybe BS.ByteString)
+-- Send it
+res <- send req
+-- Access the fields using prefixed accessor functions
+print $ responseStatus res
+```
 
 ## API Documents
 
