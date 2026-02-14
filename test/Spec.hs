@@ -36,7 +36,7 @@ main = hspec $ do
       responseStatus response `shouldBe` 200
 
     it "should send a request to example.com and return 200 OK" $ do
-      response <- send (Request GET "http://example.com" [] Nothing) :: IO (Response String)
+      response <- send (Request GET "http://example.com" [] (Nothing :: Maybe BS.ByteString)) :: IO (Response String)
       responseStatus response `shouldBe` 200
 
     it "should post to postman-echo.com/post and return 200 OK" $ do
@@ -52,19 +52,19 @@ main = hspec $ do
       responseStatus response `shouldBe` 200
 
     it "should use dot record syntax to create and access request/response" $ do
-      let req = Request { method = GET, url = "http://example.com", headers = [("User-Agent", "Haskell-Request")], body = Nothing }
+      let req = Request { method = GET, url = "http://example.com", headers = [("User-Agent", "Haskell-Request")], body = (Nothing :: Maybe BS.ByteString) }
       response <- send req :: IO (Response String)
       response.status `shouldBe` 200
       response.headers `shouldSatisfy` (not . null)
 
     it "should access response body with different types" $ do
       -- Test with ByteString body
-      let req1 = Request { method = GET, url = "http://example.com", headers = [], body = Nothing }
+      let req1 = Request { method = GET, url = "http://example.com", headers = [], body = (Nothing :: Maybe BS.ByteString) }
       response1 <- send req1 :: IO (Response BS.ByteString)
       BS.length response1.body `shouldSatisfy` (> 0)
 
       -- Test with String body
-      let req2 = Request { method = GET, url = "http://example.com", headers = [], body = Nothing }
+      let req2 = Request { method = GET, url = "http://example.com", headers = [], body = (Nothing :: Maybe BS.ByteString) }
       response2 <- send req2 :: IO (Response String)
       not (null response2.body) `shouldBe` True
 
